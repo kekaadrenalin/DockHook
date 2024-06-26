@@ -1,0 +1,61 @@
+on:
+  push:
+    tags:
+      - "v*"
+name: Test and Release
+jobs:
+  go-test:
+    name: Go Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22.x
+          check-latest: true
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Go Tests with Coverage
+        run: make test SKIP_ASSET=1
+  buildx:
+    needs: [go-test]
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: kekaadrenalin/dockhook
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.2.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
+        uses: docker/build-push-action@v6.1.0
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: TAG=${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  git-release:
+    needs: [buildx]
+    name: Github Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Node
+        uses: actions/setup-node@v4
+      - name: Release to Github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx changelogithub
