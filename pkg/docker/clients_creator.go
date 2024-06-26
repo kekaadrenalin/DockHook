@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
+	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
-	argsType "main/pkg/types"
 )
 
 func CreateClients(args argsType.Args) map[string]Client {

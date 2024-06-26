@@ -1,12 +1,12 @@
 package errors
 
-type HttpError struct {
+type HTTPError struct {
 	StatusCode int
 	Message    string
 	Err        error
 }
 
-func (m *HttpError) Error() string {
+func (m *HTTPError) Error() string {
 	if m.Message != "" {
 		return m.Message
 	}

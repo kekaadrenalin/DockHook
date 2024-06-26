@@ -1,4 +1,4 @@
-module main
+module github.com/kekaadrenalin/dockhook
 
 go 1.22.4
 

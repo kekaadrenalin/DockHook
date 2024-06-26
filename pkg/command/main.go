@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
-	argsType "main/pkg/types"
 
-	"main/pkg/docker"
-	"main/pkg/server"
-	"main/pkg/user"
+	"github.com/kekaadrenalin/dockhook/pkg/docker"
+	"github.com/kekaadrenalin/dockhook/pkg/server"
+	"github.com/kekaadrenalin/dockhook/pkg/user"
 )
 
 func Default(args argsType.Args) {

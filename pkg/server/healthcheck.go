@@ -6,7 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"main/pkg/docker"
+	"github.com/kekaadrenalin/dockhook/pkg/docker"
 )
 
 func (h *handler) healthcheck(w http.ResponseWriter, r *http.Request) {

@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	myErrors "github.com/kekaadrenalin/dockhook/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	myErrors "main/pkg/errors"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"main/pkg/docker"
-	"main/pkg/user"
-	"main/pkg/webhook"
+	"github.com/kekaadrenalin/dockhook/pkg/docker"
+	"github.com/kekaadrenalin/dockhook/pkg/user"
+	"github.com/kekaadrenalin/dockhook/pkg/webhook"
 )
 
 type AuthProvider string
@@ -120,7 +120,7 @@ func createRouter(h *handler) *chi.Mux {
 	return r
 }
 
-func (h *handler) webhookFromRequest(r *http.Request) (*webhook.Webhook, *myErrors.HttpError) {
+func (h *handler) webhookFromRequest(r *http.Request) (*webhook.Webhook, *myErrors.HTTPError) {
 	webhookUUID := chi.URLParam(r, "webhookUUID")
 
 	log.Debugf("webhook UUID: %s", webhookUUID)
@@ -130,7 +130,7 @@ func (h *handler) webhookFromRequest(r *http.Request) (*webhook.Webhook, *myErro
 		log.Infof("Header.RemoteAddr: %+v\n", r.RemoteAddr)
 		log.Infof("Header.Authorization: %+v\n", r.Header)
 
-		return nil, &myErrors.HttpError{
+		return nil, &myErrors.HTTPError{
 			StatusCode: http.StatusBadRequest,
 			Message:    fmt.Sprintf("error: %s", err),
 			Err:        err,
@@ -146,7 +146,7 @@ func (h *handler) webhookFromRequest(r *http.Request) (*webhook.Webhook, *myErro
 	if err != nil {
 		log.Errorf("unknown error: %s", err)
 
-		return nil, &myErrors.HttpError{
+		return nil, &myErrors.HTTPError{
 			StatusCode: http.StatusInternalServerError,
 			Err:        err,
 		}
@@ -156,7 +156,7 @@ func (h *handler) webhookFromRequest(r *http.Request) (*webhook.Webhook, *myErro
 	if webhookItem == nil {
 		log.Errorf("no webhook found: %s", webhookUUID)
 
-		return nil, &myErrors.HttpError{
+		return nil, &myErrors.HTTPError{
 			StatusCode: http.StatusNotFound,
 			Err:        err,
 		}

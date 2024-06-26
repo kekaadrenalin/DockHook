@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	argsType "main/pkg/types"
+	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"

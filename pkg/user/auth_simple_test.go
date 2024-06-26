@@ -1,9 +1,10 @@
 package user
 
 import (
-	"github.com/stretchr/testify/assert"
-	"main/pkg/helper"
 	"testing"
+
+	"github.com/kekaadrenalin/dockhook/pkg/helper"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_AuthSimple_CreateToken_happy(t *testing.T) {

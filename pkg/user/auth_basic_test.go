@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kekaadrenalin/dockhook/pkg/helper"
 	"github.com/stretchr/testify/assert"
-	"main/pkg/helper"
 )
 
 func Test_AuthBasic_AuthMiddleware_happy(t *testing.T) {
@@ -46,7 +46,7 @@ func Test_AuthBasic_AuthMiddleware_error(t *testing.T) {
 	}
 	authContext := NewBasicAuth(usersDB)
 
-	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	server := httptest.NewServer(handler)
@@ -72,7 +72,7 @@ func Test_AuthBasic_AuthMiddleware_block_user(t *testing.T) {
 	}
 	authContext := NewBasicAuth(usersDB)
 
-	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	server := httptest.NewServer(handler)
@@ -108,7 +108,7 @@ func Test_AuthBasic_AuthMiddleware_block_user_timeout(t *testing.T) {
 	authContext := NewBasicAuth(usersDB)
 	authContext.blockedUsers["test_user"] = time.Now().Add(-2 * time.Hour)
 
-	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	server := httptest.NewServer(handler)

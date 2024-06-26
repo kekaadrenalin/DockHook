@@ -80,7 +80,7 @@ func (a *basicAuthContext) AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (a *basicAuthContext) CreateToken(username, password string) (string, error) {
+func (a *basicAuthContext) CreateToken(_, _ string) (string, error) {
 	log.Fatalf("CreateToken not implemented for proxy auth")
 
 	return "", nil
@@ -143,7 +143,7 @@ func (a *basicAuthContext) blockUser(w http.ResponseWriter, r *http.Request, use
 }
 
 func (a *basicAuthContext) touchFailureCount(w http.ResponseWriter, r *http.Request, username string) {
-	a.failureCount[username] += 1
+	a.failureCount[username]++
 
 	if a.failureCount[username] > 10 {
 		a.blockUser(w, r, username)

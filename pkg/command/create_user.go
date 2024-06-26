@@ -1,11 +1,12 @@
 package command
 
 import (
-	"main/pkg/user"
 	"path/filepath"
 
+	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
-	argsType "main/pkg/types"
+
+	"github.com/kekaadrenalin/dockhook/pkg/user"
 )
 
 func CreateUser(args argsType.Args) (user.User, error) {

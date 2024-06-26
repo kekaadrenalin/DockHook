@@ -11,8 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/kekaadrenalin/dockhook/pkg/helper"
 	"gopkg.in/yaml.v3"
-	"main/pkg/helper"
 )
 
 type User struct {

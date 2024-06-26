@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kekaadrenalin/dockhook/pkg/helper"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-	"main/pkg/helper"
 )
 
 func Test_CreateUser_happy(t *testing.T) {

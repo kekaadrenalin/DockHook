@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
+	commands "github.com/kekaadrenalin/dockhook/pkg/command"
+	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
-	commands "main/pkg/command"
-	argsType "main/pkg/types"
 
 	"github.com/alexflint/go-arg"
 )

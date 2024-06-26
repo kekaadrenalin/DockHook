@@ -1,10 +1,10 @@
 package helper
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_GenerateUUIDv7_happy(t *testing.T) {

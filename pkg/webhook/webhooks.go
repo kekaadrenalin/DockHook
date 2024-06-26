@@ -8,9 +8,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/kekaadrenalin/dockhook/pkg/docker"
+	"github.com/kekaadrenalin/dockhook/pkg/helper"
 	"gopkg.in/yaml.v3"
-	"main/pkg/docker"
-	"main/pkg/helper"
 )
 
 type Webhook struct {

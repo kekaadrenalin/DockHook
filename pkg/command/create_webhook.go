@@ -8,12 +8,12 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
-	argsType "main/pkg/types"
 
-	"main/pkg/docker"
-	"main/pkg/helper"
-	"main/pkg/webhook"
+	"github.com/kekaadrenalin/dockhook/pkg/docker"
+	"github.com/kekaadrenalin/dockhook/pkg/helper"
+	"github.com/kekaadrenalin/dockhook/pkg/webhook"
 )
 
 type selectItems []selectItem
