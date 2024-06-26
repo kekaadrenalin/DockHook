@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run Go Tests with Coverage
-        run: make test SKIP_ASSET=1
+        run: make test
   buildx:
     needs: [go-test]
     name: Release
