@@ -1,0 +1,70 @@
+services:
+  custom_base:
+    container_name: custom_base
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DOCKHOOK_FILTER=name=custom_base
+      - DOCKHOOK_BASE=/foobarbase
+    ports:
+      - 8080:8080
+    build:
+      context: .
+
+  simple-auth:
+    container_name: simple-auth
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DOCKHOOK_AUTH_PROVIDER=simple
+    build:
+      context: .
+
+  basic-auth:
+    container_name: basic-auth
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DOCKHOOK_AUTH_PROVIDER=basic
+    build:
+      context: .
+
+  dockhook:
+    container_name: dockhook
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DOCKHOOK_FILTER=name=dockhook
+    ports:
+      - 7070:8080
+    build:
+      context: .
+
+  remote:
+    container_name: remote
+    environment:
+      - DOCKHOOK_REMOTE_HOST=tcp://proxy:2375
+      - DOCKHOOK_FILTER=name=dockhook
+    ports:
+      - 5050:8080
+    build:
+      context: .
+    depends_on:
+      proxy:
+        condition: service_healthy
+
+  proxy:
+    container_name: proxy
+    image: tecnativa/docker-socket-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CONTAINERS=1
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "2375"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      start_interval: 5s
+    ports:
+      - 2375:2375

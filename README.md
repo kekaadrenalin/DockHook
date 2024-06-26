@@ -33,8 +33,8 @@ Here is the Docker Compose file:
         image: kekaadrenalin/dockhook:latest
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
-          - ./data/users.yml:/app/data/users.yml:rw
-          - ./data/webhooks.yml:/app/data/webhooks.yml:rw
+          - ./data/users.yml:/dockhook/data/users.yml:rw
+          - ./data/webhooks.yml:/dockhook/data/webhooks.yml:rw
         ports:
           - 8888:8080
 

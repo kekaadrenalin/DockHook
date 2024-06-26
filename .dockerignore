@@ -1,0 +1,7 @@
+.cache
+.idea
+.vscode
+.github
+dist
+data
+.git
