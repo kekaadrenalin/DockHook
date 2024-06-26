@@ -9,7 +9,7 @@ COPY go.* ./
 RUN go mod download
 
 # Copy all other files
-COPY internal ./internal
+COPY pkg ./pkg
 COPY main.go ./
 
 # Args
