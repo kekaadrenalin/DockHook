@@ -41,16 +41,16 @@ func Default(args argsType.Args) {
 
 	log.Info("shutting down gracefully, press Ctrl+C again to force")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
+	defer cancel()
 
 	log.Debug("shutdown complete")
 }
 
 func createServer(args argsType.Args, clients map[string]docker.Client) *http.Server {
-	var provider server.AuthProvider = server.ProviderNone
+	var provider = server.ProviderNone
 	var authorizer server.Authorizer
 
 	if args.AuthProvider != string(server.ProviderNone) {

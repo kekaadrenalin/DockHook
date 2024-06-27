@@ -32,7 +32,7 @@ func (f *fakeCLI) Info(context.Context) (system.Info, error) {
 func Test_valid_localhost(t *testing.T) {
 	client := new(fakeCLI)
 	client.On("ContainerList").Return([]types.Container{}, nil)
-	fakeClientFactory := func(filter map[string][]string) (Client, error) {
+	fakeClientFactory := func(_ map[string][]string) (Client, error) {
 		return NewClient(client, filters.NewArgs(), &Host{
 			ID: "localhost",
 		}), nil
@@ -49,7 +49,7 @@ func Test_valid_localhost(t *testing.T) {
 func Test_invalid_localhost(t *testing.T) {
 	client := new(fakeCLI)
 	client.On("ContainerList").Return([]types.Container{}, errors.New("error"))
-	fakeClientFactory := func(filter map[string][]string) (Client, error) {
+	fakeClientFactory := func(_ map[string][]string) (Client, error) {
 		return NewClient(client, filters.NewArgs(), &Host{
 			ID: "localhost",
 		}), nil
@@ -66,7 +66,7 @@ func Test_invalid_localhost(t *testing.T) {
 func Test_valid_remote(t *testing.T) {
 	local := new(fakeCLI)
 	local.On("ContainerList").Return([]types.Container{}, errors.New("error"))
-	fakeLocalClientFactory := func(filter map[string][]string) (Client, error) {
+	fakeLocalClientFactory := func(_ map[string][]string) (Client, error) {
 		return NewClient(local, filters.NewArgs(), &Host{
 			ID: "localhost",
 		}), nil
@@ -74,7 +74,7 @@ func Test_valid_remote(t *testing.T) {
 
 	remote := new(fakeCLI)
 	remote.On("ContainerList").Return([]types.Container{}, nil)
-	fakeRemoteClientFactory := func(filter map[string][]string, host Host) (Client, error) {
+	fakeRemoteClientFactory := func(_ map[string][]string, host Host) (Client, error) {
 		return NewClient(remote, filters.NewArgs(), &Host{
 			ID: "test",
 		}), nil
@@ -96,7 +96,7 @@ func Test_valid_remote(t *testing.T) {
 func Test_valid_remote_and_local(t *testing.T) {
 	local := new(fakeCLI)
 	local.On("ContainerList").Return([]types.Container{}, nil)
-	fakeLocalClientFactory := func(filter map[string][]string) (Client, error) {
+	fakeLocalClientFactory := func(_ map[string][]string) (Client, error) {
 		return NewClient(local, filters.NewArgs(), &Host{
 			ID: "localhost",
 		}), nil
@@ -104,7 +104,7 @@ func Test_valid_remote_and_local(t *testing.T) {
 
 	remote := new(fakeCLI)
 	remote.On("ContainerList").Return([]types.Container{}, nil)
-	fakeRemoteClientFactory := func(filter map[string][]string, host Host) (Client, error) {
+	fakeRemoteClientFactory := func(_ map[string][]string, host Host) (Client, error) {
 		return NewClient(remote, filters.NewArgs(), &Host{
 			ID: "test",
 		}), nil
@@ -125,13 +125,13 @@ func Test_valid_remote_and_local(t *testing.T) {
 func Test_no_clients(t *testing.T) {
 	local := new(fakeCLI)
 	local.On("ContainerList").Return([]types.Container{}, errors.New("error"))
-	fakeLocalClientFactory := func(filter map[string][]string) (Client, error) {
+	fakeLocalClientFactory := func(_ map[string][]string) (Client, error) {
 
 		return NewClient(local, filters.NewArgs(), &Host{
 			ID: "localhost",
 		}), nil
 	}
-	fakeRemoteClientFactory := func(filter map[string][]string, host Host) (Client, error) {
+	fakeRemoteClientFactory := func(_ map[string][]string, host Host) (Client, error) {
 		client := new(fakeCLI)
 		return NewClient(client, filters.NewArgs(), &Host{
 			ID: "test",

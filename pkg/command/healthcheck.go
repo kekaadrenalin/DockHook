@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -25,18 +24,13 @@ func Healthcheck(addr string, base string) error {
 	}
 
 	log.Info("Checking health of " + url)
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec
 
 	if err != nil {
 		return err
 	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 		return nil

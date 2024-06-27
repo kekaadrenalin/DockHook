@@ -34,7 +34,7 @@ func (h *handler) createToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *handler) deleteToken(w http.ResponseWriter, r *http.Request) {
+func (h *handler) deleteToken(w http.ResponseWriter, _ *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
 		Value:    "",

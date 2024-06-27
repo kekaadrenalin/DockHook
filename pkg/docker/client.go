@@ -135,8 +135,8 @@ func NewClientWithFilters(f map[string][]string) (Client, error) {
 	return NewClient(cli, filterArgs, &Host{Name: "localhost", ID: "localhost"}), nil
 }
 
-// NewClientWithTlsAndFilter creates a new instance of Client with docker filters for remote hosts
-func NewClientWithTlsAndFilter(f map[string][]string, host Host) (Client, error) {
+// NewClientWithTLSAndFilter creates a new instance of Client with docker filters for remote hosts
+func NewClientWithTLSAndFilter(f map[string][]string, host Host) (Client, error) {
 	filterArgs := filters.NewArgs()
 	for key, values := range f {
 		for _, value := range values {

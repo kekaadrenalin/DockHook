@@ -70,7 +70,7 @@ func CreateUser(path string, user User, hashPassword bool) (User, error) {
 	}
 
 	if _, exists := users.Users[user.Username]; exists {
-		return user, errors.New(fmt.Sprintf("User %s is exists!", user.Username))
+		return user, fmt.Errorf("user %s is exists", user.Username)
 	}
 
 	users.Users[user.Username] = &user
@@ -84,7 +84,9 @@ func CreateUser(path string, user User, hashPassword bool) (User, error) {
 
 func saveUsersToFile(users UsersDatabase, path string) (UsersDatabase, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		_, err = helper.CreateDir(path)
+		if _, err = helper.CreateDir(path); err != nil {
+			return users, err
+		}
 	}
 
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
@@ -120,13 +122,13 @@ func decodeUsersFromFile(path string) (UsersDatabase, error) {
 	if err != nil {
 		return users, err
 	}
-	defer file.Close()
 
 	if err := yaml.NewDecoder(file).Decode(&users); err != nil {
 		log.Warningf("wrong file: %s\n", err)
 
 		return users, nil
 	}
+	defer file.Close()
 
 	for username, user := range users.Users {
 		user.Username = username

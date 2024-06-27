@@ -51,13 +51,14 @@ func (s *ContainerStore) checkConnectivity() error {
 			s.connected.Store(false)
 		}()
 
-		if containers, err := s.client.ListContainers(); err != nil {
+		containers, err := s.client.ListContainers()
+		if err != nil {
 			return err
-		} else {
-			s.containers.Clear()
-			for _, c := range containers {
-				s.containers.Store(c.ID, &c)
-			}
+		}
+
+		s.containers.Clear()
+		for _, c := range containers {
+			s.containers.Store(c.ID, &c)
 		}
 	}
 
@@ -131,9 +132,9 @@ func (s *ContainerStore) init() {
 						log.Debugf("container %s died", c.ID)
 						c.State = "exited"
 						return c, false
-					} else {
-						return c, true
 					}
+
+					return c, true
 				})
 			case "health_status: healthy", "health_status: unhealthy":
 				healthy := "unhealthy"
@@ -146,9 +147,9 @@ func (s *ContainerStore) init() {
 						log.Debugf("health status for container %s is %s", c.ID, healthy)
 						c.Health = healthy
 						return c, false
-					} else {
-						return c, true
 					}
+
+					return c, true
 				})
 			}
 			s.subscribers.Range(func(c context.Context, events chan ContainerEvent) bool {

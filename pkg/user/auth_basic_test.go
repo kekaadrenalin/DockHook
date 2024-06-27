@@ -19,7 +19,7 @@ func Test_AuthBasic_AuthMiddleware_happy(t *testing.T) {
 	}
 	authContext := NewBasicAuth(usersDB)
 
-	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := authContext.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	server := httptest.NewServer(handler)

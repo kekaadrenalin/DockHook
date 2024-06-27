@@ -51,7 +51,7 @@ func (m *mockedProxy) ContainerInspect(ctx context.Context, containerID string) 
 	return args.Get(0).(types.ContainerJSON), args.Error(1)
 }
 
-func (m *mockedProxy) ContainerStats(ctx context.Context, containerID string, stream bool) (container.StatsResponse, error) {
+func (m *mockedProxy) ContainerStats(_ context.Context, _ string, _ bool) (container.StatsResponse, error) {
 	return container.StatsResponse{}, nil
 }
 
@@ -320,12 +320,6 @@ func Test_dockerClient_ContainerActions_error(t *testing.T) {
 
 	proxy := new(mockedProxy)
 	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
-
-	expected := "INFO Testing inspect image..."
-	b := make([]byte, 8)
-
-	binary.BigEndian.PutUint32(b[4:], uint32(len(expected)))
-	b = append(b, []byte(expected)...)
 
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(containers, errors.New("test"))
 	proxy.On("ContainerStart", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test"))

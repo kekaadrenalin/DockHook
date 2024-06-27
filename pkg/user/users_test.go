@@ -20,10 +20,10 @@ func Test_CreateUser_happy(t *testing.T) {
 
 	// Подготовка тестовых данных
 	testUser := User{
-		Username: "testuser",
+		Username: "test_user",
 		Email:    "test@example.com",
 		Name:     "Test User",
-		Password: "testpassword",
+		Password: "test_password",
 	}
 
 	createdUser, err := CreateUser(tmpFile.Name(), testUser, true)
@@ -37,10 +37,10 @@ func Test_CreateUser_happy(t *testing.T) {
 
 func Test_CreateUser_error_exists(t *testing.T) {
 	testUser := User{
-		Username: "testuser",
+		Username: "test_user",
 		Email:    "test@example.com",
 		Name:     "Test User",
-		Password: helper.Sha512sum("testpassword"),
+		Password: helper.Sha512sum("test_password"),
 	}
 	body := generateYml(t, testUser)
 
@@ -67,10 +67,10 @@ func Test_CreateUser_error_writable(t *testing.T) {
 	}
 
 	testUser := User{
-		Username: "testuser",
+		Username: "test_user",
 		Email:    "test@example.com",
 		Name:     "Test User",
-		Password: helper.Sha512sum("testpassword"),
+		Password: helper.Sha512sum("test_password"),
 	}
 
 	_, err = CreateUser(tmpFile.Name(), testUser, true)
@@ -80,10 +80,10 @@ func Test_CreateUser_error_writable(t *testing.T) {
 
 func Test_FindByPassword_happy(t *testing.T) {
 	testUser := User{
-		Username: "testuser",
+		Username: "test_user",
 		Email:    "test@example.com",
 		Name:     "Test User",
-		Password: helper.Sha512sum("testpassword"),
+		Password: helper.Sha512sum("test_password"),
 	}
 
 	usersDB := UsersDatabase{
@@ -92,21 +92,21 @@ func Test_FindByPassword_happy(t *testing.T) {
 		},
 	}
 
-	foundUser := usersDB.FindByPassword(testUser.Username, "testpassword")
+	foundUser := usersDB.FindByPassword(testUser.Username, "test_password")
 	assert.NotNil(t, foundUser, "expected user to be found with correct password")
 	assert.Equal(t, testUser.Username, foundUser.Username, "expected username to match")
 
 	// Проверяем поиск с неверным паролем
-	notFoundUser := usersDB.FindByPassword(testUser.Username, "wrongpassword")
+	notFoundUser := usersDB.FindByPassword(testUser.Username, "wrong_password")
 	assert.Nil(t, notFoundUser, "expected no user to be found with incorrect password")
 }
 
 func Test_FindByPassword_wrong_password(t *testing.T) {
 	testUser := User{
-		Username: "testuser",
+		Username: "test_user",
 		Email:    "test@example.com",
 		Name:     "Test User",
-		Password: helper.Sha512sum("testpassword"),
+		Password: helper.Sha512sum("test_password"),
 	}
 
 	usersDB := UsersDatabase{
@@ -115,12 +115,12 @@ func Test_FindByPassword_wrong_password(t *testing.T) {
 		},
 	}
 
-	notFoundUser := usersDB.FindByPassword(testUser.Username, "wrongpassword")
+	notFoundUser := usersDB.FindByPassword(testUser.Username, "wrong_password")
 	assert.Nil(t, notFoundUser, "expected no user to be found with incorrect password")
 }
 
 func Test_RequireAuthentication_happy(t *testing.T) {
-	srv := httptest.NewServer(RequireAuthentication(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(RequireAuthentication(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})))
 	defer srv.Close()

@@ -91,7 +91,7 @@ func Test_Webhooks_Create_error_exists(t *testing.T) {
 
 	_, err = CreateWebhook(testFile, webhook)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "Webhook uuid3 is exists!")
+	assert.Contains(t, err.Error(), "webhook uuid3 is exists")
 }
 
 func setupTestFile(path string, data interface{}) error {

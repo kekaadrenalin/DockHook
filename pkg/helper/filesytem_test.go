@@ -10,7 +10,7 @@ import (
 
 func Test_CreateDir_happy(t *testing.T) {
 	tmpDir := t.TempDir()
-	testPath := filepath.Join(tmpDir, "testdir", "testfile.txt")
+	testPath := filepath.Join(tmpDir, "test_dir", "test_file.txt")
 
 	file, err := CreateDir(testPath)
 	defer func() {
@@ -25,7 +25,7 @@ func Test_CreateDir_happy(t *testing.T) {
 }
 
 func Test_CreateDir_error(t *testing.T) {
-	invalidPath := "/root/invalidpath/testfile.txt"
+	invalidPath := "/root/invalid_path/test_file.txt"
 	file, err := CreateDir(invalidPath)
 
 	assert.Error(t, err, "expected error when creating directory")
@@ -35,7 +35,7 @@ func Test_CreateDir_error(t *testing.T) {
 func Test_CreateDir_error_when_exists(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	existingDir := filepath.Join(tmpDir, "existingdir")
+	existingDir := filepath.Join(tmpDir, "existing_dir")
 	err := os.Mkdir(existingDir, 0700)
 	assert.NoError(t, err, "expected no error when creating existing directory")
 

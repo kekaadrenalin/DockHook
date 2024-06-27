@@ -68,7 +68,7 @@ func CreateServer(clients map[string]docker.Client, config Config) *http.Server 
 		stores:  stores,
 	}
 
-	return &http.Server{Addr: config.Addr, Handler: createRouter(handler)}
+	return &http.Server{Addr: config.Addr, Handler: createRouter(handler)} //nolint:gosec
 }
 
 func createRouter(h *handler) *chi.Mux {

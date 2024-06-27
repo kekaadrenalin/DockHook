@@ -9,13 +9,13 @@ import (
 )
 
 func CreateClients(args argsType.Args) map[string]Client {
-	clients := createClients(args, NewClientWithFilters, NewClientWithTlsAndFilter, args.Hostname)
+	clients := createClients(args, NewClientWithFilters, NewClientWithTLSAndFilter, args.Hostname)
 
 	if len(clients) == 0 {
 		log.Fatal("Could not connect to any Docker Engines")
-	} else {
-		log.Infof("Connected to %d Docker Engine(s)", len(clients))
 	}
+
+	log.Infof("Connected to %d Docker Engine(s)", len(clients))
 
 	return clients
 }

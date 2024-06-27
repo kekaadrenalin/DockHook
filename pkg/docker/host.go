@@ -32,12 +32,12 @@ func ParseConnection(connection string) (Host, error) {
 		return Host{}, fmt.Errorf("invalid connection string: %s", connection)
 	}
 
-	remoteUrl, err := url.Parse(parts[0])
+	remoteURL, err := url.Parse(parts[0])
 	if err != nil {
 		return Host{}, err
 	}
 
-	name := remoteUrl.Hostname()
+	name := remoteURL.Hostname()
 	if len(parts) == 2 {
 		name = parts[1]
 	}
@@ -47,7 +47,7 @@ func ParseConnection(connection string) (Host, error) {
 		log.Fatalf("error converting certs path to absolute: %s", err)
 	}
 
-	host := remoteUrl.Hostname()
+	host := remoteURL.Hostname()
 	if _, err := os.Stat(filepath.Join(basePath, host)); !os.IsNotExist(err) {
 		basePath = filepath.Join(basePath, host)
 	} else {
@@ -65,9 +65,9 @@ func ParseConnection(connection string) (Host, error) {
 	}
 
 	return Host{
-		ID:         strings.ReplaceAll(remoteUrl.String(), "/", ""),
+		ID:         strings.ReplaceAll(remoteURL.String(), "/", ""),
 		Name:       name,
-		URL:        remoteUrl,
+		URL:        remoteURL,
 		CertPath:   certPath,
 		CACertPath: caCertPath,
 		KeyPath:    keyPath,

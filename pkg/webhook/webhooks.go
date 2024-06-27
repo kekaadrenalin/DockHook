@@ -1,7 +1,6 @@
 package webhook
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -47,7 +46,7 @@ func CreateWebhook(path string, webhookItem Webhook) (Webhook, error) {
 	}
 
 	if webhooks.Webhooks[webhookItem.UUID] != nil {
-		return webhookItem, errors.New(fmt.Sprintf("Webhook %s is exists!", webhookItem.UUID))
+		return webhookItem, fmt.Errorf("webhook %s is exists", webhookItem.UUID)
 	}
 
 	webhooks.Webhooks[webhookItem.UUID] = &webhookItem
@@ -61,7 +60,9 @@ func CreateWebhook(path string, webhookItem Webhook) (Webhook, error) {
 
 func saveWebhooksToFile(webhooks WebhooksDatabase, path string) (WebhooksDatabase, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		_, err = helper.CreateDir(path)
+		if _, err = helper.CreateDir(path); err != nil {
+			return webhooks, err
+		}
 	}
 
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0644)
@@ -133,12 +134,12 @@ func (d *WebhooksDatabase) readFileIfChanged() error {
 	return nil
 }
 
-func (d *WebhooksDatabase) Find(UUID string) *Webhook {
+func (d *WebhooksDatabase) Find(Uuid string) *Webhook {
 	if err := d.readFileIfChanged(); err != nil {
 		log.Errorf("Error reading users file: %s", err)
 	}
 
-	user, ok := d.Webhooks[UUID]
+	user, ok := d.Webhooks[Uuid]
 	if !ok {
 		return nil
 	}
