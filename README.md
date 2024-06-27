@@ -3,6 +3,10 @@
 DockHook allows you to control your Docker containers through a webhook system.
 
 [![License](https://img.shields.io/github/license/kekaadrenalin/DockHook)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kekaadrenalin/dockhook)](https://goreportcard.com/report/github.com/kekaadrenalin/dockhook)
+[![Docker Pulls](https://img.shields.io/docker/pulls/kekaadrenalin/dockhook.svg)](https://hub.docker.com/r/kekaadrenalin/dockhook/)
+[![Docker Version](https://img.shields.io/docker/v/kekaadrenalin/dockhook?sort=semver)](https://hub.docker.com/r/kekaadrenalin/dockhook/)
+![Test](https://github.com/kekaadrenalin/DockHook/workflows/Test/badge.svg)
 
 This project was inspired by the excellent projects [DockHook](https://github.com/kekaadrenalin/dockhook) (which allows you to view
 container logs in real-time and provides basic functionality for starting and stopping containers)
