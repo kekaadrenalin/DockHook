@@ -5,7 +5,7 @@ go 1.22.4
 require (
 	github.com/alexflint/go-arg v1.5.0
 	github.com/charmbracelet/bubbles v0.18.0
-	github.com/charmbracelet/bubbletea v0.26.5
+	github.com/charmbracelet/bubbletea v0.26.6
 	github.com/docker/docker v27.0.0+incompatible
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/jwtauth/v5 v5.3.1
