@@ -1,8 +1,10 @@
 name: Test and Release
+
 on:
   push:
     tags:
       - "v*"
+
 jobs:
   go-test:
     name: Go Tests
@@ -18,8 +20,10 @@ jobs:
         with:
           go-version: 1.22.x
           check-latest: true
+
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Run Go Tests with Coverage
         run: make test
   buildx:
@@ -32,42 +36,29 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: kekaadrenalin/dockhook
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
       - name: Login to DockerHub
         uses: docker/login-action@v3.2.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build and push
         id: push
         uses: docker/build-push-action@v6.1.0
         with:
+          sbom: true
           push: true
+          provenance: mode=max
           platforms: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64/v8
           tags: ${{ steps.meta.outputs.tags }}
           build-args: TAG=${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: docker.io/kekaadrenalin/dockhook
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: docker.io/kekaadrenalin/dockhook:${{ steps.meta.outputs.version }}
-          output-file: 'sbom.json'
-      - name: Attest SBOM
-        uses: actions/attest-sbom@v1
-        with:
-          subject-name: docker.io/kekaadrenalin/dockhook
-          subject-digest: ${{ steps.push.outputs.digest }}
-          sbom-path: 'sbom.json'
-          push-to-registry: true
   git-release:
     needs: [ buildx ]
     name: Github Release
@@ -77,8 +68,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Install Node
         uses: actions/setup-node@v4
+
       - name: Release to Github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
