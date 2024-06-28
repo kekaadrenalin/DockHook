@@ -23,6 +23,10 @@ RUN mkdir /data
 
 FROM scratch
 
+LABEL org.opencontainers.image.source="https://github.com/kekaadrenalin/dockhook"
+LABEL org.opencontainers.image.title="DockHook Docker Image"
+LABEL org.opencontainers.image.licenses="AGPL-3.0"
+
 ENV PATH /bin
 COPY --from=builder /data /data
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
