@@ -66,7 +66,7 @@ type DockerCLI interface {
 	ContainerLogs(context.Context, string, container.LogsOptions) (io.ReadCloser, error)
 	Events(context.Context, events.ListOptions) (<-chan events.Message, <-chan error)
 	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
-	ContainerStats(ctx context.Context, containerID string, stream bool) (container.StatsResponse, error)
+	ContainerStats(ctx context.Context, containerID string, stream bool) (container.StatsResponseReader, error)
 	Ping(ctx context.Context) (types.Ping, error)
 	ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error
 	ContainerStop(ctx context.Context, containerID string, options container.StopOptions) error
