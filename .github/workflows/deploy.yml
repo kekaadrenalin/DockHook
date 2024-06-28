@@ -1,8 +1,8 @@
+name: Test and Release
 on:
   push:
     tags:
       - "v*"
-name: Test and Release
 jobs:
   go-test:
     name: Go Tests
@@ -18,7 +18,7 @@ jobs:
       - name: Run Go Tests with Coverage
         run: make test
   buildx:
-    needs: [go-test]
+    needs: [ go-test ]
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +35,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Build and push
+        id: push
         uses: docker/build-push-action@v6.1.0
         with:
           push: true
@@ -44,8 +45,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: docker.io/kekaadrenalin/dockhook
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Generate SBOM attestation
+        uses: actions/attest-sbom@v1
+        with:
+          subject-name: docker.io/kekaadrenalin/dockhook
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: 'sbom.json'
+          push-to-registry: true
   git-release:
-    needs: [buildx]
+    needs: [ buildx ]
     name: Github Release
     runs-on: ubuntu-latest
     steps:
