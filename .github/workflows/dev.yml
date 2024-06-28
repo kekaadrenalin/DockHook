@@ -46,7 +46,12 @@ jobs:
           subject-name: docker.io/kekaadrenalin/dockhook
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
-      - name: Generate SBOM attestation
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: docker.io/kekaadrenalin/dockhook:${{ steps.meta.outputs.version }}
+          output-file: 'sbom.json'
+      - name: Attest SBOM
         uses: actions/attest-sbom@v1
         with:
           subject-name: docker.io/kekaadrenalin/dockhook
