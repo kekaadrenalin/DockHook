@@ -8,7 +8,7 @@ DockHook allows you to control your Docker containers through a webhook system.
 [![Docker Version](https://img.shields.io/docker/v/kekaadrenalin/dockhook?sort=semver)](https://hub.docker.com/r/kekaadrenalin/dockhook/)
 ![Test](https://github.com/kekaadrenalin/DockHook/workflows/Test/badge.svg)
 
-This project was inspired by the excellent projects [DockHook](https://github.com/kekaadrenalin/dockhook) (which allows you to view
+This project was inspired by the excellent projects [Dozzle](https://github.com/amir20/dozzle) (which allows you to view
 container logs in real-time and provides basic functionality for starting and stopping containers)
 and [Portainer](https://www.portainer.io/) (a project for deploying and managing complex Docker environments). If you
 find the current functionality insufficient, you may consider using these projects.
