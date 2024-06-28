@@ -3,4 +3,5 @@
 .env
 /data/
 /dist/
+/node_modules/
 go_build_*
