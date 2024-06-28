@@ -24,9 +24,9 @@ RUN mkdir /data
 FROM scratch
 
 ENV PATH /bin
-COPY --from=builder /data /data
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /dockhook/dockhook /dockhook
+COPY --from=builder /data /dockhook/data
 
 EXPOSE 8080
 

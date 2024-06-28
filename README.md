@@ -37,8 +37,10 @@ Here is the Docker Compose file:
         image: kekaadrenalin/dockhook:latest
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
-          - ./data/users.yml:/data/users.yml:rw
-          - ./data/webhooks.yml:/data/webhooks.yml:rw
+          - ./data/users.yml:/dockhook/data/users.yml:rw
+          - ./data/webhooks.yml:/dockhook/data/webhooks.yml:rw
+          ... or ...
+          - ./some_data/:/dockhook/data/
         ports:
           - 8888:8080
 
@@ -54,11 +56,11 @@ container, for example, `./data/users.yml`). The file storage will be created in
 Additionally, you need to create the first webhook interactively to manage the desired container. The available actions
 are `START`, `STOP`, `RESTART`, and `PULL` (more details can be found in the Actions section):
 
-    $ docker run kekaadrenalin/dockhook create-webhook
+    $ docker run --volume=/var/run/docker.sock:/var/run/docker.sock:ro kekaadrenalin/dockhook create-webhook
 
 You can also quickly filter only the containers started via `docker compose`:
 
-    $ docker run kekaadrenalin/dockhook create-webhook --docker-compose-only
+    $ docker run --volume=/var/run/docker.sock:/var/run/docker.sock:ro kekaadrenalin/dockhook create-webhook --docker-compose-only
 
 ### Actions
 
