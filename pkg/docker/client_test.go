@@ -104,6 +104,12 @@ func (m *mockedProxy) ImageInspectWithRaw(ctx context.Context, imageID string) (
 	return args.Get(0).(types.ImageInspect), args.Get(1).([]byte), args.Error(2)
 }
 
+func (m *mockedProxy) TryImagePull(imageName string, registryAuth string) (bool, error) {
+	args := m.Called(imageName, registryAuth)
+
+	return args.Get(0).(bool), args.Error(1)
+}
+
 func Test_dockerClient_ListContainers_null(t *testing.T) {
 	proxy := new(mockedProxy)
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(nil, nil)
@@ -298,7 +304,7 @@ func Test_dockerClient_ContainerActions_happy(t *testing.T) {
 
 	actions := ContainerActions
 	for _, action := range actions {
-		err := client.ContainerActions(action, containerItem.ID)
+		err := client.ContainerActions(action, containerItem.ID, "")
 		require.NoError(t, err, "error should not be thrown")
 		assert.Equal(t, err, nil)
 	}
@@ -331,7 +337,7 @@ func Test_dockerClient_ContainerActions_error(t *testing.T) {
 
 	actions := ContainerActions
 	for _, action := range actions {
-		err := client.ContainerActions(action, containerItem.ID)
+		err := client.ContainerActions(action, containerItem.ID, "")
 		require.Error(t, err, "error should be thrown")
 		assert.Error(t, err, "error should have been returned")
 	}

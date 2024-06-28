@@ -35,7 +35,7 @@ func (h *handler) containerWebhooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = client.ContainerActions(webhookItem.Action, container.ID)
+	err = client.ContainerActions(webhookItem.Action, container.ID, webhookItem.Auth)
 	if err != nil {
 		log.Errorf("error while trying to perform action %s: %s", webhookItem.Action, err)
 

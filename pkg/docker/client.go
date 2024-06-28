@@ -84,7 +84,8 @@ type Client interface {
 	ContainerLogsBetweenDates(context.Context, string, time.Time, time.Time, StdType) (io.ReadCloser, error)
 	Ping(context.Context) (types.Ping, error)
 	Host() *Host
-	ContainerActions(action ContainerAction, containerID string) error
+	ContainerActions(action ContainerAction, containerID string, registryAuth string) error
+	TryImagePull(imageRef string, registryAuth string) (bool, error)
 	IsSwarmMode() bool
 	SystemInfo() system.Info
 }
@@ -205,7 +206,7 @@ func (d *httpClient) FindContainer(id string) (Container, error) {
 	return containerItem, nil
 }
 
-func (d *httpClient) ContainerActions(action ContainerAction, containerID string) error {
+func (d *httpClient) ContainerActions(action ContainerAction, containerID string, registryAuth string) error {
 	switch action {
 	case Action.START:
 		return d.StartContainer(context.Background(), containerID)
@@ -217,7 +218,7 @@ func (d *httpClient) ContainerActions(action ContainerAction, containerID string
 		return d.RestartContainer(context.Background(), containerID)
 
 	case Action.PULL:
-		return d.PullAndRestartContainer(context.Background(), containerID)
+		return d.PullAndRestartContainer(context.Background(), containerID, registryAuth)
 
 	default:
 		return fmt.Errorf("unknown action: %s", action)
@@ -350,10 +351,10 @@ func (d *httpClient) SystemInfo() system.Info {
 }
 
 // PullLatestImage pulls the latest version of an image
-func (d *httpClient) PullLatestImage(ctx context.Context, imageName string) error {
+func (d *httpClient) PullLatestImage(ctx context.Context, imageName string, registryAuth string) error {
 	log.Debugf("Pulling latest image for %s", imageName)
 
-	out, err := d.cli.ImagePull(ctx, imageName, image.PullOptions{})
+	out, err := d.cli.ImagePull(ctx, imageName, image.PullOptions{RegistryAuth: registryAuth})
 	if err != nil {
 		return err
 	}
@@ -379,7 +380,7 @@ func (d *httpClient) RestartContainer(ctx context.Context, containerID string) e
 }
 
 // PullAndRestartContainer pulls new image and restarts a container
-func (d *httpClient) PullAndRestartContainer(ctx context.Context, containerID string) error {
+func (d *httpClient) PullAndRestartContainer(ctx context.Context, containerID string, registryAuth string) error {
 	if containerID == "" {
 		return errors.New("empty container ID")
 	}
@@ -395,7 +396,7 @@ func (d *httpClient) PullAndRestartContainer(ctx context.Context, containerID st
 	}
 
 	imageName := containerInspect.Config.Image
-	if err := d.PullLatestImage(ctx, imageName); err != nil {
+	if err := d.PullLatestImage(ctx, imageName, registryAuth); err != nil {
 		return err
 	}
 
@@ -409,6 +410,17 @@ func (d *httpClient) PullAndRestartContainer(ctx context.Context, containerID st
 	log.Debugf("image new: %s - %s", newImage.ID, newImage.RepoTags)
 
 	return d.cli.ContainerRestart(context.Background(), containerID, container.StopOptions{})
+}
+
+func (d *httpClient) TryImagePull(imageName string, registryAuth string) (bool, error) {
+	_, err := d.cli.ImagePull(context.Background(), imageName, image.PullOptions{RegistryAuth: registryAuth})
+	if err != nil {
+		log.Debugf("err: %T %+v\n", err, err)
+
+		return false, err
+	}
+
+	return true, nil
 }
 
 var ParenthesisRe = regexp.MustCompile(`\(([a-zA-Z]+)\)`)

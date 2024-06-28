@@ -22,9 +22,9 @@ Pull the latest release with:
 ### Running DockHook
 
 The simplest way to use DockHook is to run the docker container. Also, mount the Docker Unix socket with `--volume`
-to `/var/run/docker.sock`:
+to `/var/run/docker.sock` and the path to the storages' directory:
 
-    $ docker run --name dockhook -d --volume=/var/run/docker.sock:/var/run/docker.sock:ro -p 8888:8080 kekaadrenalin/dockhook:latest
+    $ docker run --name dockhook -d --volume=/var/run/docker.sock:/var/run/docker.sock:ro --volume=./data/:/data/ -p 8888:8080 kekaadrenalin/dockhook:latest
 
 DockHook will be available at [http://localhost:8888/](http://localhost:8888/).
 
@@ -49,7 +49,9 @@ Here is the Docker Compose file:
 You need to run a command at least once to add a new user to the file storage (which must be accessible to the
 container, for example, `./data/users.yml`). The file storage will be created in any case in the volume:
 
-    $ docker run kekaadrenalin/dockhook create-user admin --password password --email test@email.net --name "John Doe"
+    $ docker run --volume=/var/run/docker.sock:/var/run/docker.sock:ro --volume=./data/:/data/ kekaadrenalin/dockhook /dockhook create-user admin --password password --email test@email.net --name "John Doe"
+    or
+    $ docker compose exec -it dockhook /dockhook create-user admin --password password --email test@email.net --name "John Doe"
 
 ### Webhooks
 
@@ -57,10 +59,14 @@ Additionally, you need to create the first webhook interactively to manage the d
 are `START`, `STOP`, `RESTART`, and `PULL` (more details can be found in the Actions section):
 
     $ docker run --volume=/var/run/docker.sock:/var/run/docker.sock:ro kekaadrenalin/dockhook create-webhook
+    or
+    $ docker compose exec -it dockhook /dockhook create-webhook
 
 You can also quickly filter only the containers started via `docker compose`:
 
     $ docker run --volume=/var/run/docker.sock:/var/run/docker.sock:ro kekaadrenalin/dockhook create-webhook --docker-compose-only
+    or
+    $ docker compose exec -it dockhook /dockhook create-webhook --docker-compose-only
 
 ### Actions
 

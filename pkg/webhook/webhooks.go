@@ -17,6 +17,7 @@ type Webhook struct {
 	ContainerId string                 `json:"containerId" yaml:"containerId"`
 	Host        string                 `json:"host,omitempty" yaml:"host"`
 	Action      docker.ContainerAction `json:"action" yaml:"action"`
+	Auth        string                 `json:"auth" yaml:"auth"`
 	Created     time.Time              `json:"created" yaml:"created"`
 }
 
