@@ -10,6 +10,11 @@ jobs:
   buildx:
     name: Push branches and PRs
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
     if: ${{ !github.event.repository.fork && !github.event.pull_request.head.repo.fork && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == 'kekaadrenalin/dockhook') }}
     steps:
       - name: Docker meta
