@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/docker/docker/api/types/registry"
@@ -17,7 +16,7 @@ import (
 	"github.com/kekaadrenalin/dockhook/pkg/webhook"
 )
 
-func CreateWebhook(args argsType.Args) (types.Webhook, error) {
+func CreateWebhook(args types.Args) (types.Webhook, error) {
 	path, err := filepath.Abs("./data/webhooks.yml")
 	if err != nil {
 		log.Fatalf("Could not find absolute path to webhooks.yml file: %s", err)
