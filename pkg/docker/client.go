@@ -409,7 +409,11 @@ func (d *httpClient) PullAndRestartContainer(ctx context.Context, containerID st
 	log.Debugf("image old: %s - %s", currentImage.ID, currentImage.RepoTags)
 	log.Debugf("image new: %s - %s", newImage.ID, newImage.RepoTags)
 
-	return d.cli.ContainerRestart(context.Background(), containerID, container.StopOptions{})
+	if err = d.cli.ContainerStop(context.Background(), containerID, container.StopOptions{}); err != nil {
+		return err
+	}
+
+	return d.cli.ContainerStart(context.Background(), containerID, container.StartOptions{})
 }
 
 func (d *httpClient) TryImagePull(imageName string, registryAuth string) (bool, error) {
