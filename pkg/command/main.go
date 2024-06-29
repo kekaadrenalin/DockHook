@@ -9,20 +9,20 @@ import (
 	"syscall"
 	"time"
 
-	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/kekaadrenalin/dockhook/pkg/docker"
 	"github.com/kekaadrenalin/dockhook/pkg/server"
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 	"github.com/kekaadrenalin/dockhook/pkg/user"
 )
 
-func Default(args argsType.Args) {
+func Default(args types.Args) {
 	if !server.ValidAuthProviders[args.AuthProvider] {
 		log.Fatalf("Invalid auth provider %s", args.AuthProvider)
 	}
 
-	log.Infof("DockHook version %s", argsType.Version)
+	log.Infof("DockHook version %s", types.Version)
 
 	clients := docker.CreateClients(args)
 
@@ -49,7 +49,7 @@ func Default(args argsType.Args) {
 	log.Debug("shutdown complete")
 }
 
-func createServer(args argsType.Args, clients map[string]docker.Client) *http.Server {
+func createServer(args types.Args, clients map[string]types.Client) *http.Server {
 	var provider = server.ProviderNone
 	var authorizer server.Authorizer
 
@@ -79,7 +79,7 @@ func createServer(args argsType.Args, clients map[string]docker.Client) *http.Se
 	config := server.Config{
 		Addr:     args.Addr,
 		Base:     args.Base,
-		Version:  argsType.Version,
+		Version:  types.Version,
 		Hostname: args.Hostname,
 		Authorization: server.Authorization{
 			Provider:   provider,

@@ -1,4 +1,4 @@
-package docker
+package types
 
 import (
 	"context"
@@ -110,7 +110,7 @@ func (s *ContainerStore) init() {
 			log.Tracef("received event: %+v", event)
 			switch event.Name {
 			case "start":
-				if container, err := s.client.FindContainer(event.ActorID); err == nil {
+				if container, err := s.client.FindContainerByID(event.ActorID); err == nil {
 					log.Debugf("container %s started", container.ID)
 					s.containers.Store(container.ID, &container)
 					s.newContainerSubscribers.Range(func(c context.Context, containers chan Container) bool {

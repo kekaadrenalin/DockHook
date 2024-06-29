@@ -5,15 +5,19 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	ociSpec "github.com/opencontainers/image-spec/specs-go/v1"
 	"io"
 	"time"
 
 	"testing"
 
+	myTypes "github.com/kekaadrenalin/dockhook/pkg/types"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/system"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,7 +26,7 @@ import (
 
 type mockedProxy struct {
 	mock.Mock
-	DockerCLI
+	myTypes.DockerCLI
 }
 
 func (m *mockedProxy) ContainerList(context.Context, container.ListOptions) ([]types.Container, error) {
@@ -104,16 +108,22 @@ func (m *mockedProxy) ImageInspectWithRaw(ctx context.Context, imageID string) (
 	return args.Get(0).(types.ImageInspect), args.Get(1).([]byte), args.Error(2)
 }
 
-func (m *mockedProxy) TryImagePull(imageName string, registryAuth string) (bool, error) {
-	args := m.Called(imageName, registryAuth)
+func (m *mockedProxy) ContainerRemove(ctx context.Context, containerID string, options container.RemoveOptions) error {
+	args := m.Called(ctx, containerID, options)
 
-	return args.Get(0).(bool), args.Error(1)
+	return args.Error(0)
+}
+
+func (m *mockedProxy) ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, platform *ociSpec.Platform, containerName string) (container.CreateResponse, error) {
+	args := m.Called(ctx, config, hostConfig, networkingConfig, platform, containerName)
+
+	return args.Get(0).(container.CreateResponse), args.Error(1)
 }
 
 func Test_dockerClient_ListContainers_null(t *testing.T) {
 	proxy := new(mockedProxy)
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(nil, nil)
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
 	list, err := client.ListContainers()
 	assert.Empty(t, list, "list should be empty")
@@ -125,7 +135,7 @@ func Test_dockerClient_ListContainers_null(t *testing.T) {
 func Test_dockerClient_ListContainers_error(t *testing.T) {
 	proxy := new(mockedProxy)
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(nil, errors.New("test"))
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
 	list, err := client.ListContainers()
 	assert.Nil(t, list, "list should be nil")
@@ -148,7 +158,7 @@ func Test_dockerClient_ListContainers_happy(t *testing.T) {
 
 	proxy := new(mockedProxy)
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(containers, nil)
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
 	list, err := client.ListContainers()
 	require.NoError(t, err, "error should not return an error.")
@@ -182,8 +192,8 @@ func Test_dockerClient_ContainerLogs_happy(t *testing.T) {
 		Since:      "2021-01-01T00:00:00.001Z"}
 	proxy.On("ContainerLogs", mock.Anything, id, options).Return(reader, nil)
 
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
-	logReader, _ := client.ContainerLogs(context.Background(), id, &since, STDALL)
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
+	logReader, _ := client.ContainerLogs(context.Background(), id, &since, myTypes.STDALL)
 
 	actual, _ := io.ReadAll(logReader)
 	assert.Equal(t, string(b), string(actual), "message doesn't match expected")
@@ -196,9 +206,9 @@ func Test_dockerClient_ContainerLogs_error(t *testing.T) {
 
 	proxy.On("ContainerLogs", mock.Anything, id, mock.Anything).Return(nil, errors.New("test"))
 
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
-	reader, err := client.ContainerLogs(context.Background(), id, nil, STDALL)
+	reader, err := client.ContainerLogs(context.Background(), id, nil, myTypes.STDALL)
 
 	assert.Nil(t, reader, "reader should be nil")
 	assert.Error(t, err, "error should have been returned")
@@ -224,9 +234,9 @@ func Test_dockerClient_FindContainer_happy(t *testing.T) {
 	json := types.ContainerJSON{ContainerJSONBase: &types.ContainerJSONBase{State: state}, Config: &container.Config{Tty: false}}
 	proxy.On("ContainerInspect", mock.Anything, "abcdefghijkl").Return(json, nil)
 
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
-	containerItem, err := client.FindContainer("abcdefghijkl")
+	containerItem, err := client.FindContainerByID("abcdefghijkl")
 	require.NoError(t, err, "error should not be thrown")
 
 	assert.Equal(t, containerItem.ID, "abcdefghijkl")
@@ -247,9 +257,9 @@ func Test_dockerClient_FindContainer_error(t *testing.T) {
 
 	proxy := new(mockedProxy)
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(containers, nil)
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
-	_, err := client.FindContainer("not_valid")
+	_, err := client.FindContainerByID("not_valid")
 	require.Error(t, err, "error should be thrown")
 
 	proxy.AssertExpectations(t)
@@ -268,10 +278,15 @@ func Test_dockerClient_ContainerActions_happy(t *testing.T) {
 	}
 
 	proxy := new(mockedProxy)
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
 	state := &types.ContainerState{Status: "running", StartedAt: time.Now().Format(time.RFC3339Nano)}
-	containerJSON := types.ContainerJSON{ContainerJSONBase: &types.ContainerJSONBase{State: state}, Config: &container.Config{Tty: false, Image: "alpine"}}
+	containerJSON := types.ContainerJSON{
+		ContainerJSONBase: &types.ContainerJSONBase{State: state}, Config: &container.Config{Tty: false, Image: "alpine"},
+		NetworkSettings: &types.NetworkSettings{
+			Networks: map[string]*network.EndpointSettings{},
+		},
+	}
 
 	expected := "INFO Testing inspect image...\n"
 	b := make([]byte, 8)
@@ -281,12 +296,8 @@ func Test_dockerClient_ContainerActions_happy(t *testing.T) {
 
 	reader := io.NopCloser(bytes.NewReader(b))
 
-	imageJSON := types.ImageInspect{
-		ID:          "sha256:abcdefghijkl",
-		RepoTags:    nil,
-		GraphDriver: types.GraphDriverData{},
-		RootFS:      types.RootFS{},
-		Metadata:    image.Metadata{},
+	createResponse := container.CreateResponse{
+		ID: "abcdefghijkl",
 	}
 
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(containers, nil)
@@ -294,19 +305,36 @@ func Test_dockerClient_ContainerActions_happy(t *testing.T) {
 	proxy.On("ContainerStart", mock.Anything, "abcdefghijkl", mock.Anything).Return(nil)
 	proxy.On("ContainerRestart", mock.Anything, "abcdefghijkl", mock.Anything).Return(nil)
 	proxy.On("ContainerStop", mock.Anything, "abcdefghijkl", mock.Anything).Return(nil)
-	proxy.On("ImageInspectWithRaw", mock.Anything, "alpine").Return(imageJSON, b, nil)
+	proxy.On("ContainerRemove", mock.Anything, "abcdefghijkl", mock.Anything).Return(nil)
+	proxy.On("ContainerCreate", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(createResponse, nil)
 	proxy.On("ImagePull", mock.Anything, "alpine", mock.Anything).Return(reader, nil)
 
-	containerItem, err := client.FindContainer("abcdefghijkl")
+	containerItem, err := client.FindContainerByID("abcdefghijkl")
 	require.NoError(t, err, "error should not be thrown")
-
 	assert.Equal(t, containerItem.ID, "abcdefghijkl")
 
-	actions := ContainerActions
+	containerItem, err = client.FindContainerByName("z_test_container")
+	require.NoError(t, err, "error should not be thrown")
+	assert.Equal(t, containerItem.Name, "z_test_container")
+	assert.Equal(t, containerItem.ID, "abcdefghijkl")
+
+	actions := myTypes.ContainerActions
 	for _, action := range actions {
-		err := client.ContainerActions(action, containerItem.ID, "")
-		require.NoError(t, err, "error should not be thrown")
-		assert.Equal(t, err, nil)
+		webhookItem := &myTypes.Webhook{
+			UUID:          "c3413cb2-c1d2-7e8b-a329-8dff7bcfac86",
+			ContainerId:   "abcdefghijkl",
+			ContainerName: "z_test_container",
+			Host:          "localhost",
+			Action:        action,
+			Created:       time.Time{},
+		}
+
+		containerItem, err := client.ContainerActions(webhookItem)
+		if err != nil {
+			assert.Nil(t, err, "error should not be thrown")
+		} else {
+			assert.NotNil(t, containerItem, "container should not be nil")
+		}
 	}
 
 	proxy.AssertExpectations(t)
@@ -325,21 +353,33 @@ func Test_dockerClient_ContainerActions_error(t *testing.T) {
 	}
 
 	proxy := new(mockedProxy)
-	client := &httpClient{proxy, filters.NewArgs(), &Host{ID: "localhost"}, system.Info{}}
+	client := &httpClient{proxy, filters.NewArgs(), &myTypes.Host{ID: "localhost"}, system.Info{}}
 
 	proxy.On("ContainerList", mock.Anything, mock.Anything).Return(containers, errors.New("test"))
-	proxy.On("ContainerStart", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test"))
-	proxy.On("ContainerStop", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test"))
-	proxy.On("ContainerRestart", mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test"))
 
-	containerItem, err := client.FindContainer("random-id")
+	_, err := client.FindContainerByID("random-id")
 	require.Error(t, err, "error should be thrown")
 
-	actions := ContainerActions
+	_, err = client.FindContainerByName("random-name")
+	require.Error(t, err, "error should be thrown")
+
+	actions := myTypes.ContainerActions
 	for _, action := range actions {
-		err := client.ContainerActions(action, containerItem.ID, "")
-		require.Error(t, err, "error should be thrown")
-		assert.Error(t, err, "error should have been returned")
+		webhookItem := &myTypes.Webhook{
+			UUID:          "c3413cb2-c1d2-7e8b-a329-8dff7bcfac86",
+			ContainerId:   "abcdefghijkl",
+			ContainerName: "z_test_container",
+			Host:          "localhost",
+			Action:        action,
+			Created:       time.Time{},
+		}
+
+		containerItem, err := client.ContainerActions(webhookItem)
+		if err != nil {
+			assert.NotNil(t, err, "error should be thrown")
+		} else {
+			assert.Nil(t, containerItem, "container should be nil")
+		}
 	}
 
 	proxy.AssertExpectations(t)

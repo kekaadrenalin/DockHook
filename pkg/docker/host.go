@@ -8,33 +8,19 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 )
 
-type Host struct {
-	Name       string   `json:"name"`
-	ID         string   `json:"id"`
-	URL        *url.URL `json:"-"`
-	CertPath   string   `json:"-"`
-	CACertPath string   `json:"-"`
-	KeyPath    string   `json:"-"`
-	ValidCerts bool     `json:"-"`
-	NCPU       int      `json:"nCPU"`
-	MemTotal   int64    `json:"memTotal"`
-}
-
-func (h *Host) GetDescription() string {
-	return fmt.Sprintf("ID: %s --> Name: %s", h.ID, h.Name)
-}
-
-func ParseConnection(connection string) (Host, error) {
+func ParseConnection(connection string) (types.Host, error) {
 	parts := strings.Split(connection, "|")
 	if len(parts) > 2 {
-		return Host{}, fmt.Errorf("invalid connection string: %s", connection)
+		return types.Host{}, fmt.Errorf("invalid connection string: %s", connection)
 	}
 
 	remoteURL, err := url.Parse(parts[0])
 	if err != nil {
-		return Host{}, err
+		return types.Host{}, err
 	}
 
 	name := remoteURL.Hostname()
@@ -64,7 +50,7 @@ func ParseConnection(connection string) (Host, error) {
 		hasCerts = false
 	}
 
-	return Host{
+	return types.Host{
 		ID:         strings.ReplaceAll(remoteURL.String(), "/", ""),
 		Name:       name,
 		URL:        remoteURL,

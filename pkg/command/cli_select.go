@@ -1,12 +1,13 @@
 package command
 
 import (
-	"github.com/kekaadrenalin/dockhook/pkg/docker"
 	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 )
 
 type selectItems []selectItem
@@ -28,9 +29,9 @@ var (
 
 var cliSelectTitle = "Select your choice:\n\n"
 
-func populateChoicesWithClients(clients map[string]docker.Client) map[string]docker.Client {
+func populateChoicesWithClients(clients map[string]types.Client) map[string]types.Client {
 	clearSelectChoices("Select a client:\n\n")
-	storeClients := map[string]docker.Client{}
+	storeClients := map[string]types.Client{}
 
 	for host, client := range clients {
 		storeClients[host] = client
@@ -40,9 +41,9 @@ func populateChoicesWithClients(clients map[string]docker.Client) map[string]doc
 	return storeClients
 }
 
-func populateChoicesWithContainers(containers []docker.Container) map[string]docker.Container {
+func populateChoicesWithContainers(containers []types.Container) map[string]types.Container {
 	clearSelectChoices("Select a container:\n\n")
-	storeContainers := map[string]docker.Container{}
+	storeContainers := map[string]types.Container{}
 
 	for _, container := range containers {
 		storeContainers[container.ID] = container

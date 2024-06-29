@@ -2,9 +2,10 @@ package docker
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/docker/docker/api/types/network"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	myErrors "github.com/kekaadrenalin/dockhook/pkg/errors"
+	myTypes "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/docker/docker/api/types"
@@ -25,79 +28,14 @@ import (
 	"github.com/docker/docker/client"
 )
 
-type StdType int
-
-const (
-	UNKNOWN StdType = 1 << iota
-	STDOUT
-	STDERR
-)
-const STDALL = STDOUT | STDERR
-
-func (s StdType) String() string {
-	switch s {
-	case STDOUT:
-		return "stdout"
-	case STDERR:
-		return "stderr"
-	case STDALL:
-		return "all"
-	default:
-		return "unknown"
-	}
-}
-
-type Actions struct {
-	START   ContainerAction
-	STOP    ContainerAction
-	RESTART ContainerAction
-	PULL    ContainerAction
-}
-
-var Action = Actions{
-	START:   ActionStart,
-	STOP:    ActionStop,
-	RESTART: ActionRestart,
-	PULL:    ActionPull,
-}
-
-type DockerCLI interface {
-	ContainerList(context.Context, container.ListOptions) ([]types.Container, error)
-	ContainerLogs(context.Context, string, container.LogsOptions) (io.ReadCloser, error)
-	Events(context.Context, events.ListOptions) (<-chan events.Message, <-chan error)
-	ContainerInspect(ctx context.Context, containerID string) (types.ContainerJSON, error)
-	ContainerStats(ctx context.Context, containerID string, stream bool) (container.StatsResponseReader, error)
-	Ping(ctx context.Context) (types.Ping, error)
-	ContainerStart(ctx context.Context, containerID string, options container.StartOptions) error
-	ContainerStop(ctx context.Context, containerID string, options container.StopOptions) error
-	ContainerRestart(ctx context.Context, containerID string, options container.StopOptions) error
-	Info(ctx context.Context) (system.Info, error)
-	ImagePull(ctx context.Context, refStr string, options image.PullOptions) (io.ReadCloser, error)
-	ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error)
-}
-
-type Client interface {
-	ListContainers() ([]Container, error)
-	FindContainer(string) (Container, error)
-	ContainerLogs(context.Context, string, *time.Time, StdType) (io.ReadCloser, error)
-	Events(context.Context, chan<- ContainerEvent) error
-	ContainerLogsBetweenDates(context.Context, string, time.Time, time.Time, StdType) (io.ReadCloser, error)
-	Ping(context.Context) (types.Ping, error)
-	Host() *Host
-	ContainerActions(action ContainerAction, containerID string, registryAuth string) error
-	TryImagePull(imageRef string, registryAuth string) (bool, error)
-	IsSwarmMode() bool
-	SystemInfo() system.Info
-}
-
 type httpClient struct {
-	cli     DockerCLI
+	cli     myTypes.DockerCLI
 	filters filters.Args
-	host    *Host
+	host    *myTypes.Host
 	info    system.Info
 }
 
-func NewClient(cli DockerCLI, filters filters.Args, host *Host) Client {
+func NewClient(cli myTypes.DockerCLI, filters filters.Args, host *myTypes.Host) myTypes.Client {
 	clientItem := &httpClient{
 		cli:     cli,
 		filters: filters,
@@ -117,7 +55,7 @@ func NewClient(cli DockerCLI, filters filters.Args, host *Host) Client {
 }
 
 // NewClientWithFilters creates a new instance of Client with docker filters
-func NewClientWithFilters(f map[string][]string) (Client, error) {
+func NewClientWithFilters(f map[string][]string) (myTypes.Client, error) {
 	filterArgs := filters.NewArgs()
 	for key, values := range f {
 		for _, value := range values {
@@ -133,11 +71,11 @@ func NewClientWithFilters(f map[string][]string) (Client, error) {
 		return nil, err
 	}
 
-	return NewClient(cli, filterArgs, &Host{Name: "localhost", ID: "localhost"}), nil
+	return NewClient(cli, filterArgs, &myTypes.Host{Name: "localhost", ID: "localhost"}), nil
 }
 
 // NewClientWithTLSAndFilter creates a new instance of Client with docker filters for remote hosts
-func NewClientWithTLSAndFilter(f map[string][]string, host Host) (Client, error) {
+func NewClientWithTLSAndFilter(f map[string][]string, host myTypes.Host) (myTypes.Client, error) {
 	filterArgs := filters.NewArgs()
 	for key, values := range f {
 		for _, value := range values {
@@ -173,9 +111,9 @@ func NewClientWithTLSAndFilter(f map[string][]string, host Host) (Client, error)
 	return NewClient(cli, filterArgs, &host), nil
 }
 
-// FindContainer finds a container by ID
-func (d *httpClient) FindContainer(id string) (Container, error) {
-	var containerItem Container
+// FindContainerByID finds a container by ID
+func (d *httpClient) FindContainerByID(id string) (myTypes.Container, error) {
+	var containerItem myTypes.Container
 	containers, err := d.ListContainers()
 	if err != nil {
 		return containerItem, err
@@ -206,27 +144,86 @@ func (d *httpClient) FindContainer(id string) (Container, error) {
 	return containerItem, nil
 }
 
-func (d *httpClient) ContainerActions(action ContainerAction, containerID string, registryAuth string) error {
-	switch action {
-	case Action.START:
-		return d.StartContainer(context.Background(), containerID)
-
-	case Action.STOP:
-		return d.StopContainer(context.Background(), containerID)
-
-	case Action.RESTART:
-		return d.RestartContainer(context.Background(), containerID)
-
-	case Action.PULL:
-		return d.PullAndRestartContainer(context.Background(), containerID, registryAuth)
-
-	default:
-		return fmt.Errorf("unknown action: %s", action)
+// FindContainerByName finds a container by Name
+func (d *httpClient) FindContainerByName(name string) (myTypes.Container, error) {
+	var containerItem myTypes.Container
+	containers, err := d.ListContainers()
+	if err != nil {
+		return containerItem, err
 	}
+
+	found := false
+	for _, c := range containers {
+		if c.Name == name {
+			containerItem = c
+			found = true
+			break
+		}
+	}
+	if !found {
+		return containerItem, fmt.Errorf("unable to find containerItem with name: %s", name)
+	}
+
+	if jsonBody, err := d.cli.ContainerInspect(context.Background(), containerItem.ID); err == nil {
+		containerItem.Tty = jsonBody.Config.Tty
+		if startedAt, err := time.Parse(time.RFC3339Nano, jsonBody.State.StartedAt); err == nil {
+			utc := startedAt.UTC()
+			containerItem.StartedAt = &utc
+		}
+	} else {
+		return containerItem, err
+	}
+
+	return containerItem, nil
+}
+
+func (d *httpClient) ContainerActions(webhook *myTypes.Webhook) (*myTypes.Container, *myErrors.HTTPError) {
+	var err error
+	var containerItem myTypes.Container
+
+	if webhook.Action == myTypes.Action.PULL {
+		containerItem, err = d.FindContainerByName(webhook.ContainerName)
+	} else {
+		containerItem, err = d.FindContainerByID(webhook.ContainerId)
+	}
+	if err != nil {
+		return nil, &myErrors.HTTPError{
+			Err:        err,
+			StatusCode: http.StatusNotFound,
+			Message:    fmt.Sprintf("no container found %s", webhook.ContainerId),
+		}
+	}
+
+	err = func() error {
+		switch webhook.Action {
+		case myTypes.Action.START:
+			return d.StartContainer(context.Background(), containerItem.ID)
+
+		case myTypes.Action.STOP:
+			return d.StopContainer(context.Background(), containerItem.ID)
+
+		case myTypes.Action.RESTART:
+			return d.RestartContainer(context.Background(), containerItem.ID)
+
+		case myTypes.Action.PULL:
+			return d.PullAndRestartContainer(context.Background(), webhook, containerItem)
+
+		default:
+			return fmt.Errorf("unknown action: %s", webhook.Action)
+		}
+	}()
+	if err != nil {
+		return nil, &myErrors.HTTPError{
+			Err:        err,
+			StatusCode: http.StatusInternalServerError,
+		}
+	}
+
+	return &containerItem, nil
 }
 
 // ListContainers lists all containers
-func (d *httpClient) ListContainers() ([]Container, error) {
+func (d *httpClient) ListContainers() ([]myTypes.Container, error) {
 	containerListOptions := container.ListOptions{
 		Filters: d.filters,
 		All:     true,
@@ -236,14 +233,14 @@ func (d *httpClient) ListContainers() ([]Container, error) {
 		return nil, err
 	}
 
-	var containers = make([]Container, 0, len(list))
+	var containers = make([]myTypes.Container, 0, len(list))
 	for _, c := range list {
 		name := "no name"
 		if len(c.Names) > 0 {
 			name = strings.TrimPrefix(c.Names[0], "/")
 		}
 
-		containerItem := Container{
+		containerItem := myTypes.Container{
 			ID:      c.ID[:12],
 			Names:   c.Names,
 			Name:    name,
@@ -267,7 +264,7 @@ func (d *httpClient) ListContainers() ([]Container, error) {
 	return containers, nil
 }
 
-func (d *httpClient) ContainerLogs(ctx context.Context, id string, since *time.Time, stdType StdType) (io.ReadCloser, error) {
+func (d *httpClient) ContainerLogs(ctx context.Context, id string, since *time.Time, stdType myTypes.StdType) (io.ReadCloser, error) {
 	log.WithField("id", id).WithField("since", since).WithField("stdType", stdType).Debug("streaming logs for container")
 
 	sinceQuery := ""
@@ -276,8 +273,8 @@ func (d *httpClient) ContainerLogs(ctx context.Context, id string, since *time.T
 	}
 
 	options := container.LogsOptions{
-		ShowStdout: stdType&STDOUT != 0,
-		ShowStderr: stdType&STDERR != 0,
+		ShowStdout: stdType&myTypes.STDOUT != 0,
+		ShowStderr: stdType&myTypes.STDERR != 0,
 		Follow:     true,
 		Tail:       strconv.Itoa(100),
 		Timestamps: true,
@@ -292,7 +289,7 @@ func (d *httpClient) ContainerLogs(ctx context.Context, id string, since *time.T
 	return reader, nil
 }
 
-func (d *httpClient) Events(ctx context.Context, messages chan<- ContainerEvent) error {
+func (d *httpClient) Events(ctx context.Context, messages chan<- myTypes.ContainerEvent) error {
 	dockerMessages, err := d.cli.Events(ctx, events.ListOptions{})
 
 	for {
@@ -304,7 +301,7 @@ func (d *httpClient) Events(ctx context.Context, messages chan<- ContainerEvent)
 
 		case message := <-dockerMessages:
 			if message.Type == events.ContainerEventType && len(message.Actor.ID) > 0 {
-				messages <- ContainerEvent{
+				messages <- myTypes.ContainerEvent{
 					ActorID: message.Actor.ID[:12],
 					Name:    string(message.Action),
 					Host:    d.host.ID,
@@ -315,10 +312,10 @@ func (d *httpClient) Events(ctx context.Context, messages chan<- ContainerEvent)
 
 }
 
-func (d *httpClient) ContainerLogsBetweenDates(ctx context.Context, id string, from time.Time, to time.Time, stdType StdType) (io.ReadCloser, error) {
+func (d *httpClient) ContainerLogsBetweenDates(ctx context.Context, id string, from time.Time, to time.Time, stdType myTypes.StdType) (io.ReadCloser, error) {
 	options := container.LogsOptions{
-		ShowStdout: stdType&STDOUT != 0,
-		ShowStderr: stdType&STDERR != 0,
+		ShowStdout: stdType&myTypes.STDOUT != 0,
+		ShowStderr: stdType&myTypes.STDERR != 0,
 		Timestamps: true,
 		Since:      from.Format(time.RFC3339Nano),
 		Until:      to.Format(time.RFC3339Nano),
@@ -338,7 +335,7 @@ func (d *httpClient) Ping(ctx context.Context) (types.Ping, error) {
 	return d.cli.Ping(ctx)
 }
 
-func (d *httpClient) Host() *Host {
+func (d *httpClient) Host() *myTypes.Host {
 	return d.host
 }
 
@@ -380,40 +377,45 @@ func (d *httpClient) RestartContainer(ctx context.Context, containerID string) e
 }
 
 // PullAndRestartContainer pulls new image and restarts a container
-func (d *httpClient) PullAndRestartContainer(ctx context.Context, containerID string, registryAuth string) error {
-	if containerID == "" {
-		return errors.New("empty container ID")
-	}
+func (d *httpClient) PullAndRestartContainer(ctx context.Context, webhook *myTypes.Webhook, containerItem myTypes.Container) error {
+	containerID := containerItem.ID
 
 	containerInspect, err := d.cli.ContainerInspect(context.Background(), containerID)
 	if err != nil {
 		return err
 	}
 
-	currentImage, _, err := d.cli.ImageInspectWithRaw(context.Background(), containerInspect.Config.Image)
-	if err != nil {
-		return err
-	}
-
 	imageName := containerInspect.Config.Image
-	if err := d.PullLatestImage(ctx, imageName, registryAuth); err != nil {
+	if err := d.PullLatestImage(ctx, imageName, webhook.Auth); err != nil {
 		return err
 	}
 
-	newImage, _, err := d.cli.ImageInspectWithRaw(context.Background(), imageName)
-	if err != nil {
-		return err
+	config := containerInspect.Config
+	hostConfig := containerInspect.HostConfig
+	networkingConfig := &network.NetworkingConfig{
+		EndpointsConfig: containerInspect.NetworkSettings.Networks,
 	}
-
-	log.Debugf("image Name: %s", imageName)
-	log.Debugf("image old: %s - %s", currentImage.ID, currentImage.RepoTags)
-	log.Debugf("image new: %s - %s", newImage.ID, newImage.RepoTags)
 
 	if err = d.cli.ContainerStop(context.Background(), containerID, container.StopOptions{}); err != nil {
 		return err
 	}
 
-	return d.cli.ContainerStart(context.Background(), containerID, container.StartOptions{})
+	log.Debugf("Stoped Container ID: %s\n", containerID)
+
+	if err = d.cli.ContainerRemove(context.Background(), containerID, container.RemoveOptions{}); err != nil {
+		return err
+	}
+
+	log.Debugf("Removed Container ID: %s\n", containerID)
+
+	newContainer, err := d.cli.ContainerCreate(context.Background(), config, hostConfig, networkingConfig, nil, containerInspect.Name)
+	if err != nil {
+		log.Fatalf("Error creating container: %v", err)
+	}
+
+	log.Debugf("Created Container ID: %s\n", newContainer.ID)
+
+	return d.cli.ContainerStart(context.Background(), newContainer.ID, container.StartOptions{})
 }
 
 func (d *httpClient) TryImagePull(imageName string, registryAuth string) (bool, error) {

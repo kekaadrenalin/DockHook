@@ -6,12 +6,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kekaadrenalin/dockhook/pkg/docker"
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 )
 
 func (h *handler) healthcheck(w http.ResponseWriter, r *http.Request) {
 	log.Trace("Executing command request")
-	var client docker.Client
+	var client types.Client
 
 	for _, v := range h.clients {
 		client = v

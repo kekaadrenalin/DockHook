@@ -7,25 +7,16 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/kekaadrenalin/dockhook/pkg/docker"
 	"github.com/kekaadrenalin/dockhook/pkg/helper"
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 	"gopkg.in/yaml.v3"
 )
 
-type Webhook struct {
-	UUID        string                 `json:"uuid" yaml:"-"`
-	ContainerId string                 `json:"containerId" yaml:"containerId"`
-	Host        string                 `json:"host,omitempty" yaml:"host"`
-	Action      docker.ContainerAction `json:"action" yaml:"action"`
-	Auth        string                 `json:"auth" yaml:"auth"`
-	Created     time.Time              `json:"created" yaml:"created"`
-}
-
 type WebhooksDatabase struct {
-	Webhooks map[string]*Webhook `yaml:"webhooks"`
-	LastRead time.Time           `yaml:"-"`
-	LastSave time.Time           `yaml:"-"`
-	Path     string              `yaml:"-"`
+	Webhooks map[string]*types.Webhook `yaml:"webhooks"`
+	LastRead time.Time                 `yaml:"-"`
+	LastSave time.Time                 `yaml:"-"`
+	Path     string                    `yaml:"-"`
 }
 
 func ReadWebhooksFromFile(path string) (WebhooksDatabase, error) {
@@ -40,7 +31,7 @@ func ReadWebhooksFromFile(path string) (WebhooksDatabase, error) {
 	return webhooks, nil
 }
 
-func CreateWebhook(path string, webhookItem Webhook) (Webhook, error) {
+func CreateWebhook(path string, webhookItem types.Webhook) (types.Webhook, error) {
 	webhooks, err := ReadWebhooksFromFile(path)
 	if err != nil {
 		return webhookItem, err
@@ -90,7 +81,7 @@ func decodeWebhooksFromFile(path string) (WebhooksDatabase, error) {
 	webhooks := WebhooksDatabase{}
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		webhooks.Webhooks = map[string]*Webhook{}
+		webhooks.Webhooks = map[string]*types.Webhook{}
 
 		return webhooks, nil
 	}
@@ -135,7 +126,7 @@ func (d *WebhooksDatabase) readFileIfChanged() error {
 	return nil
 }
 
-func (d *WebhooksDatabase) Find(Uuid string) *Webhook {
+func (d *WebhooksDatabase) Find(Uuid string) *types.Webhook {
 	if err := d.readFileIfChanged(); err != nil {
 		log.Errorf("Error reading users file: %s", err)
 	}

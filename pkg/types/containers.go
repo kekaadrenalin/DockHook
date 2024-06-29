@@ -1,4 +1,4 @@
-package docker
+package types
 
 import (
 	"fmt"
@@ -44,6 +44,20 @@ var ContainerActions = []ContainerAction{
 	ActionStop,
 	ActionRestart,
 	ActionPull,
+}
+
+type Actions struct {
+	START   ContainerAction
+	STOP    ContainerAction
+	RESTART ContainerAction
+	PULL    ContainerAction
+}
+
+var Action = Actions{
+	START:   ActionStart,
+	STOP:    ActionStop,
+	RESTART: ActionRestart,
+	PULL:    ActionPull,
 }
 
 func (c *Container) GetDescription() string {

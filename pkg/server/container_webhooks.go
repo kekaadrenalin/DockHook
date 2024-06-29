@@ -27,19 +27,11 @@ func (h *handler) containerWebhooks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	container, err := client.FindContainer(webhookItem.ContainerId)
+	container, err := client.ContainerActions(webhookItem)
 	if err != nil {
-		log.Errorf("no container found %s", webhookItem.ContainerId)
+		log.Error(err.Error())
 
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	err = client.ContainerActions(webhookItem.Action, container.ID, webhookItem.Auth)
-	if err != nil {
-		log.Errorf("error while trying to perform action %s: %s", webhookItem.Action, err)
-
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(err.StatusCode)
 		return
 	}
 

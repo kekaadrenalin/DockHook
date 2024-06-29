@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"github.com/kekaadrenalin/dockhook/pkg/docker"
 	"github.com/kekaadrenalin/dockhook/pkg/user"
 	"github.com/kekaadrenalin/dockhook/pkg/webhook"
 )
@@ -51,15 +51,15 @@ type Authorizer interface {
 }
 
 type handler struct {
-	clients map[string]docker.Client
-	stores  map[string]*docker.ContainerStore
+	clients map[string]types.Client
+	stores  map[string]*types.ContainerStore
 	config  *Config
 }
 
-func CreateServer(clients map[string]docker.Client, config Config) *http.Server {
-	stores := make(map[string]*docker.ContainerStore)
+func CreateServer(clients map[string]types.Client, config Config) *http.Server {
+	stores := make(map[string]*types.ContainerStore)
 	for host, client := range clients {
-		stores[host] = docker.NewContainerStore(context.Background(), client)
+		stores[host] = types.NewContainerStore(context.Background(), client)
 	}
 
 	handler := &handler{
@@ -120,7 +120,7 @@ func createRouter(h *handler) *chi.Mux {
 	return r
 }
 
-func (h *handler) webhookFromRequest(r *http.Request) (*webhook.Webhook, *myErrors.HTTPError) {
+func (h *handler) webhookFromRequest(r *http.Request) (*types.Webhook, *myErrors.HTTPError) {
 	webhookUUID := chi.URLParam(r, "webhookUUID")
 
 	log.Debugf("webhook UUID: %s", webhookUUID)

@@ -13,10 +13,11 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/kekaadrenalin/dockhook/pkg/docker"
 	"github.com/kekaadrenalin/dockhook/pkg/helper"
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 	"github.com/kekaadrenalin/dockhook/pkg/webhook"
 )
 
-func CreateWebhook(args argsType.Args) (webhook.Webhook, error) {
+func CreateWebhook(args argsType.Args) (types.Webhook, error) {
 	path, err := filepath.Abs("./data/webhooks.yml")
 	if err != nil {
 		log.Fatalf("Could not find absolute path to webhooks.yml file: %s", err)
@@ -37,8 +38,8 @@ func CreateWebhook(args argsType.Args) (webhook.Webhook, error) {
 	storeContainers := populateChoicesWithContainers(containers)
 	container := storeContainers[selectChoice()]
 
-	populateChoicesWithActions(docker.ContainerActions)
-	action := docker.ContainerAction(selectChoice())
+	populateChoicesWithActions(types.ContainerActions)
+	action := types.ContainerAction(selectChoice())
 
 	auth := getRegistryAuth(client, container.Image, action)
 
@@ -48,21 +49,22 @@ func CreateWebhook(args argsType.Args) (webhook.Webhook, error) {
 		log.Fatalf("Not created UUID: %s\n", err)
 	}
 
-	return webhook.CreateWebhook(path, webhook.Webhook{
-		UUID:        uuid.String(),
-		ContainerId: container.ID,
-		Host:        container.Host,
-		Action:      action,
-		Auth:        auth,
-		Created:     time.Now(),
+	return webhook.CreateWebhook(path, types.Webhook{
+		UUID:          uuid.String(),
+		ContainerId:   container.ID,
+		ContainerName: container.Name,
+		Host:          container.Host,
+		Action:        action,
+		Auth:          auth,
+		Created:       time.Now(),
 	})
 }
 
-func getRegistryAuth(client docker.Client, imageRef string, action docker.ContainerAction) string {
+func getRegistryAuth(client types.Client, imageRef string, action types.ContainerAction) string {
 	auth := ""
 	needAuth := false
 
-	if action == docker.ActionPull {
+	if action == types.ActionPull {
 		storeNeedAuth := populateChoicesWithNeedAuth()
 		needAuth = storeNeedAuth[selectChoice()]
 	}
@@ -92,7 +94,7 @@ func getRegistryAuth(client docker.Client, imageRef string, action docker.Contai
 	return auth
 }
 
-func populateChoicesWithActions(actions []docker.ContainerAction) {
+func populateChoicesWithActions(actions []types.ContainerAction) {
 	clearSelectChoices("Select an action:\n\n")
 
 	for _, action := range actions {

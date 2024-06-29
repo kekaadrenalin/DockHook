@@ -4,11 +4,11 @@ import (
 	"errors"
 	"time"
 
-	argsType "github.com/kekaadrenalin/dockhook/pkg/types"
+	myTypes "github.com/kekaadrenalin/dockhook/pkg/types"
 	log "github.com/sirupsen/logrus"
 )
 
-func CreateClients(args argsType.Args) map[string]Client {
+func CreateClients(args myTypes.Args) map[string]myTypes.Client {
 	clients := createClients(args, NewClientWithFilters, NewClientWithTLSAndFilter, args.Hostname)
 
 	if len(clients) == 0 {
@@ -21,12 +21,12 @@ func CreateClients(args argsType.Args) map[string]Client {
 }
 
 func createClients(
-	args argsType.Args,
-	localClientFactory func(map[string][]string) (Client, error),
-	remoteClientFactory func(map[string][]string, Host) (Client, error),
+	args myTypes.Args,
+	localClientFactory func(map[string][]string) (myTypes.Client, error),
+	remoteClientFactory func(map[string][]string, myTypes.Host) (myTypes.Client, error),
 	hostname string,
-) map[string]Client {
-	clients := make(map[string]Client)
+) map[string]myTypes.Client {
+	clients := make(map[string]myTypes.Client)
 
 	if localClient, err := createLocalClient(args, localClientFactory); err == nil {
 		if hostname != "" {
@@ -61,9 +61,9 @@ func createClients(
 }
 
 func createLocalClient(
-	args argsType.Args,
-	localClientFactory func(map[string][]string) (Client, error),
-) (Client, error) {
+	args myTypes.Args,
+	localClientFactory func(map[string][]string) (myTypes.Client, error),
+) (myTypes.Client, error) {
 	for i := 1; ; i++ {
 		dockerClient, err := localClientFactory(args.Filter)
 		if err == nil {

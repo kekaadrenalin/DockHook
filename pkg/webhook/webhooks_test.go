@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kekaadrenalin/dockhook/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -14,13 +15,14 @@ func Test_Webhooks_ReadFromFile_happy(t *testing.T) {
 	defer os.Remove(testFile)
 
 	expectedWebhooks := WebhooksDatabase{
-		Webhooks: map[string]*Webhook{
+		Webhooks: map[string]*types.Webhook{
 			"uuid1": {
-				UUID:        "uuid1",
-				ContainerId: "container1",
-				Host:        "host1",
-				Action:      "start",
-				Created:     time.Now(),
+				UUID:          "uuid1",
+				ContainerId:   "container1",
+				ContainerName: "containerName1",
+				Host:          "host1",
+				Action:        "start",
+				Created:       time.Now(),
 			},
 		},
 	}
@@ -45,12 +47,13 @@ func Test_Webhooks_Create_happy(t *testing.T) {
 	testFile := "test_create_webhook.yaml"
 	defer os.Remove(testFile)
 
-	webhook := Webhook{
-		UUID:        "uuid2",
-		ContainerId: "container2",
-		Host:        "host2",
-		Action:      "stop",
-		Created:     time.Now(),
+	webhook := types.Webhook{
+		UUID:          "uuid2",
+		ContainerId:   "container2",
+		ContainerName: "containerName2",
+		Host:          "host2",
+		Action:        "stop",
+		Created:       time.Now(),
 	}
 
 	createdWebhook, err := CreateWebhook(testFile, webhook)
@@ -68,25 +71,27 @@ func Test_Webhooks_Create_error_exists(t *testing.T) {
 	defer os.Remove(testFile)
 
 	webhooksDB := WebhooksDatabase{
-		Webhooks: map[string]*Webhook{
+		Webhooks: map[string]*types.Webhook{
 			"uuid3": {
-				UUID:        "uuid3",
-				ContainerId: "container3",
-				Host:        "host3",
-				Action:      "restart",
-				Created:     time.Now(),
+				UUID:          "uuid3",
+				ContainerId:   "container3",
+				ContainerName: "containerName3",
+				Host:          "host3",
+				Action:        "restart",
+				Created:       time.Now(),
 			},
 		},
 	}
 	err := setupTestFile(testFile, webhooksDB)
 	assert.NoError(t, err)
 
-	webhook := Webhook{
-		UUID:        "uuid3",
-		ContainerId: "container3",
-		Host:        "host3",
-		Action:      "restart",
-		Created:     time.Now(),
+	webhook := types.Webhook{
+		UUID:          "uuid3",
+		ContainerId:   "container3",
+		ContainerName: "containerName3",
+		Host:          "host3",
+		Action:        "restart",
+		Created:       time.Now(),
 	}
 
 	_, err = CreateWebhook(testFile, webhook)
