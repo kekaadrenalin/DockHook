@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.22.5-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.22.6-alpine AS builder
 
 RUN apk add --no-cache ca-certificates && mkdir /dockhook
 
